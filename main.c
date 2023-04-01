@@ -1,8 +1,9 @@
+#include <stdint.h>
+
+#include "stdbool.h"
 #include "stdio.h"
 #include "stdlib.h"
-#include "stdbool.h"
 #include "string.h"
-#include <stdint.h>
 
 #define EXIT_FAILURE 1
 #define EXIT_SUCCESS 0
@@ -38,10 +39,7 @@ typedef struct {
   void* pages[TABLE_MAX_PAGES];
 } Table;
 
-typedef enum {
-  EXECUTE_SUCCESS, 
-  EXECUTE_TABLE_FULL 
-  } ExecuteResult;
+typedef enum { EXECUTE_SUCCESS, EXECUTE_TABLE_FULL } ExecuteResult;
 
 void print_row(Row* row) {
   printf("(%d, %s, %s)\n", row->id, row->username, row->email);
@@ -85,11 +83,9 @@ InputBuffer* new_input_buffer() {
   return input_buffer;
 }
 
-void print_prompt() { 
-    printf("db > "); 
-}
+void print_prompt() { printf("db > "); }
 
-ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+ssize_t getline(char** lineptr, size_t* n, FILE* stream);
 
 void read_input(InputBuffer* input_buffer) {
   ssize_t bytes_read =
@@ -105,8 +101,8 @@ void read_input(InputBuffer* input_buffer) {
 }
 
 void close_input_buffer(InputBuffer* input_buffer) {
-    free(input_buffer->buffer);
-    free(input_buffer);
+  free(input_buffer->buffer);
+  free(input_buffer);
 }
 
 typedef enum {
@@ -114,22 +110,22 @@ typedef enum {
   META_COMMAND_UNRECOGNIZED_COMMAND
 } MetaCommandResult;
 
-typedef enum { 
-  PREPARE_SUCCESS, 
+typedef enum {
+  PREPARE_SUCCESS,
   PREPARE_NEGATIVE_ID,
   PREPARE_SYNTAX_ERROR,
   PREPARE_STRING_TOO_LONG,
-  PREPARE_UNRECOGNIZED_STATEMENT 
+  PREPARE_UNRECOGNIZED_STATEMENT
 } PrepareResult;
 
 void free_table(Table* table) {
-    for (int i = 0; table->pages[i]; i++) {
-	    free(table->pages[i]);
-    }
-    free(table);
+  for (int i = 0; table->pages[i]; i++) {
+    free(table->pages[i]);
+  }
+  free(table);
 }
 
-MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table *table) {
+MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table* table) {
   if (strcmp(input_buffer->buffer, ".exit") == 0) {
     close_input_buffer(input_buffer);
     free_table(table);
@@ -139,10 +135,7 @@ MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table *table) {
   }
 }
 
-typedef enum {
-  STATEMENT_INSERT, 
-  STATEMENT_SELECT 
-} StatementType;
+typedef enum { STATEMENT_INSERT, STATEMENT_SELECT } StatementType;
 
 typedef struct {
   StatementType type;
@@ -180,7 +173,8 @@ PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement) {
   return PREPARE_SUCCESS;
 }
 
-PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement) {
+PrepareResult prepare_statement(InputBuffer* input_buffer,
+                                Statement* statement) {
   if (strncmp(input_buffer->buffer, "insert", 6) == 0) {
     return prepare_insert(input_buffer, statement);
   }
@@ -195,7 +189,7 @@ PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
 
 ExecuteResult execute_insert(Statement* statement, Table* table) {
   if (table->num_rows >= TABLE_MAX_ROWS) {
-     return EXECUTE_TABLE_FULL;
+    return EXECUTE_TABLE_FULL;
   }
 
   Row* row_to_insert = &(statement->row_to_insert);
@@ -209,18 +203,18 @@ ExecuteResult execute_insert(Statement* statement, Table* table) {
 ExecuteResult execute_select(Statement* statement, Table* table) {
   Row row;
   for (uint32_t i = 0; i < table->num_rows; i++) {
-     deserialize_row(row_slot(table, i), &row);
-     print_row(&row);
+    deserialize_row(row_slot(table, i), &row);
+    print_row(&row);
   }
   return EXECUTE_SUCCESS;
 }
 
-ExecuteResult execute_statement(Statement* statement, Table *table) {
+ExecuteResult execute_statement(Statement* statement, Table* table) {
   switch (statement->type) {
     case (STATEMENT_INSERT):
-       	return execute_insert(statement, table);
+      return execute_insert(statement, table);
     case (STATEMENT_SELECT):
-	return execute_select(statement, table);
+      return execute_select(statement, table);
   }
 }
 
@@ -228,7 +222,7 @@ Table* new_table() {
   Table* table = (Table*)malloc(sizeof(Table));
   table->num_rows = 0;
   for (uint32_t i = 0; i < TABLE_MAX_PAGES; i++) {
-     table->pages[i] = NULL;
+    table->pages[i] = NULL;
   }
   return table;
 }
@@ -246,10 +240,10 @@ int main(int argc, char* argv[]) {
         case (META_COMMAND_SUCCESS):
           continue;
         case (META_COMMAND_UNRECOGNIZED_COMMAND):
-        printf("Unrecognized command '%s'\n", input_buffer->buffer);
+          printf("Unrecognized command '%s'\n", input_buffer->buffer);
           continue;
-        }
       }
+    }
 
     Statement statement;
 
@@ -266,8 +260,9 @@ int main(int argc, char* argv[]) {
         printf("Syntax error. Could not parse statement.\n");
         continue;
       case (PREPARE_UNRECOGNIZED_STATEMENT):
-       printf("Unrecognized keyword at start of '%s'.\n", input_buffer->buffer);
-       continue;
+        printf("Unrecognized keyword at start of '%s'.\n",
+               input_buffer->buffer);
+        continue;
     }
 
     switch (execute_statement(&statement, table)) {
@@ -279,4 +274,4 @@ int main(int argc, char* argv[]) {
         break;
     }
   }
- }
+}
